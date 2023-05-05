@@ -1,5 +1,5 @@
 # COS738: Busca e Mineração de Texto
- Repositório dedicado às tarefas e projetos da disciplina de mestrado "COS738 - Busca e Mineração de Texto", cursada na Universidade Federal do Rio de Janeiro (UFRJ) durante o período 2022/4. 
+ Repositório dedicado às tarefas e projetos da disciplina de mestrado "COS738 - Busca e Mineração de Texto", cursada na Universidade Federal do Rio de Janeiro (UFRJ) durante o período 2023/1. 
 
 ## Exercícios
 As soluções para os exercícios podem ser encontradas no diretório "[*exercises*](exercises/)". A lista com descrições dos exercícios pode ser encontrada abaixo.
