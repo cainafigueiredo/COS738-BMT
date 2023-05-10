@@ -69,3 +69,8 @@ class InvertedListGeneratorConfig(ConfigBase):
 
         except Exception as e: 
             raise e
+        
+class IndexerConfig(ConfigBase):
+    def __init__(self, configPath: Text):
+        super().__init__(configPath)
+        self.requiredInstructions = ["LEIA", "CONSULTAS"]

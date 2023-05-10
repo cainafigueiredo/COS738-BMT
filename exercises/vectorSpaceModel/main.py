@@ -6,9 +6,9 @@ if __name__ == "__main__":
     import sys
     sys.path.append(WORKDIR)
 
-    from utils.cfg import QueryProcessorConfig, InvertedListGeneratorConfig
+    from utils.cfg import QueryProcessorConfig, InvertedListGeneratorConfig, IndexerConfig
     from src.queryProcessor import QueryProcessor
-    from src.indexer import InvertedListGenerator
+    from src.indexer import InvertedListGenerator, Indexer
 
     # Query Processor
     QUERY_PROCESSOR_CFG_FILEPATH = os.path.normpath(f"{WORKDIR}/PC.CFG")
@@ -27,7 +27,7 @@ if __name__ == "__main__":
         expectedResultsFilePath = expectedResultsFilePath
     )
 
-    # Indexer
+    # Inverted List
     INVERTED_LIST_CFG_FILEPATH = os.path.normpath(f"{WORKDIR}/GLI.CFG")
     
     invertedListCFG = InvertedListGeneratorConfig(configPath = INVERTED_LIST_CFG_FILEPATH)
@@ -41,6 +41,21 @@ if __name__ == "__main__":
         invertedListFilePath = invertedListFilePath
     )
 
+    ## Inverted List
+    INDEXER_CFG_FILEPATH = os.path.normpath(f"{WORKDIR}/INDEX.CFG")
+    
+    indexerCFG = IndexerConfig(configPath = INDEXER_CFG_FILEPATH)
+    invertedListFilePath = os.path.abspath(indexerCFG["LEIA"])
+    indexesFilePath = os.path.abspath(indexerCFG["ESCREVA"])
+
+    os.makedirs(os.path.dirname(indexesFilePath), exist_ok = True)
+
+    indexer = Indexer(
+        invertedListFilePath = invertedListFilePath,
+        indexesFilePath = indexesFilePath
+    )
+
     # Putting all together
     queryProcessor.run()
     invertedListGenerator.run()
+    indexer.run()
