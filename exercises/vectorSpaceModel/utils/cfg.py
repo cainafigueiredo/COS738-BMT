@@ -7,7 +7,6 @@ class ConfigBase:
         self.configPath = configPath
         self.cfg = None
         self.requiredInstructions = []
-        self.loadConfig()
     
     def checkRequiredInstructions(self) -> bool:
         if self.cfg is not None:
@@ -25,6 +24,8 @@ class ConfigBase:
             hasAllRequiredInstructions = self.checkRequiredInstructions()
             if not hasAllRequiredInstructions:            
                 raise Exception(f"Error while parsing config file. The following parameters are required: {', '.join(self.requiredInstructions)}")
+            
+            return self.cfg
 
         except Exception as e: 
             raise e
@@ -49,7 +50,7 @@ class InvertedListGeneratorConfig(ConfigBase):
         if self.cfg is not None:
             instructions = set(self.cfg.keys())
             if len(set(self.requiredInstructions) - instructions) == 0:
-                if len(self.cfg["ESCREVA"]) == 1:
+                if len(self.cfg["ESCREVA"])  == 1:
                     return True
         return False
 
@@ -60,6 +61,7 @@ class InvertedListGeneratorConfig(ConfigBase):
             cfg = cfg.groupby("instruction").agg(lambda group: list(group))
             self.cfg = dict([*cfg.itertuples()])
 
+
             hasAllRequiredInstructions = self.checkRequiredInstructions()
 
             if not hasAllRequiredInstructions:            
@@ -67,10 +69,17 @@ class InvertedListGeneratorConfig(ConfigBase):
 
             self.cfg["ESCREVA"] = self.cfg["ESCREVA"][0]
 
+            return self.cfg
+
         except Exception as e: 
             raise e
         
 class IndexerConfig(ConfigBase):
     def __init__(self, configPath: Text):
         super().__init__(configPath)
-        self.requiredInstructions = ["LEIA", "CONSULTAS"]
+        self.requiredInstructions = ["LEIA", "ESCREVA"]
+
+class SearcherConfig(ConfigBase):
+    def __init__(self, configPath: Text):
+        super().__init__(configPath)
+        self.requiredInstructions = ["MODELO", "CONSULTAS", "RESULTADOS"]

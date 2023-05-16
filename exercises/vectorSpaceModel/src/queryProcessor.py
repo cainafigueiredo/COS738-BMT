@@ -10,6 +10,7 @@ sys.path.append(PROJECT_DIR)
 from typing import Text
 from xml.dom import minidom
 from utils.textProcessing import textPreprocessingFunc
+from utils import log
 
 class QueryProcessor:
     def __init__(
@@ -22,6 +23,7 @@ class QueryProcessor:
         self.processedQueriesFilePath = processedQueriesFilePath
         self.expectedResultsFilePath = expectedResultsFilePath
         self.queries = None
+        self.logger = log.initLogger("QUERY_PROCESSOR")
     
     def parseQueries(self):
         dataDOM = minidom.parse(self.queriesFilePath)
@@ -42,6 +44,7 @@ class QueryProcessor:
             data.append([queryNumber, queryText, queryResults])
 
         self.queries = pd.DataFrame(data = data, columns = columns)
+
     
     def preprocessQueries(self):
         self.queries.loc[:, "queryText"] = self.queries.loc[:, "queryText"].apply(textPreprocessingFunc)
@@ -57,8 +60,40 @@ class QueryProcessor:
         dataToStore = dataToStore.loc[:,["queryNumber", "docNumber", "docVotes"]]
         dataToStore.to_csv(self.expectedResultsFilePath, index = False, sep = ";")
 
+    def _run(self):
+        log.executeFunction(
+            logger = self.logger, 
+            onStartMessage = "Loading queries and expected results",
+            onFinishMessage = "Queries and expected results were loaded with success",
+            onErrorMessage = "Error while loading queries",
+            func = self.parseQueries
+        )
+        self.logger.info(f"Total Queries: {self.queries.shape[0]}")
+
+        log.executeFunction(
+            logger = self.logger, 
+            onStartMessage = "Preprocessing queries",
+            onFinishMessage = "Queries were preprocessed with success",
+            onErrorMessage = "Error while preprocessing queries",
+            func = self.preprocessQueries
+        )
+
+        log.executeFunction(
+            logger = self.logger, 
+            onStartMessage = "Storing preprocessed queries",
+            onFinishMessage = "Preprocessed queries were stored with success",
+            onErrorMessage = "Error while storing preprocessed queries",
+            func = self.storeQueries
+        )
+        self.logger.info(f"Total stored queries: {self.queries.shape[0]}")
+        
+        log.executeFunction(
+            logger = self.logger, 
+            onStartMessage = "Storing expected results",
+            onFinishMessage = "Expected results were stored with success",
+            onErrorMessage = "Error while storing expected results",
+            func = self.storeExpectedResults
+        )
+
     def run(self):
-        self.parseQueries()
-        self.preprocessQueries()
-        self.storeQueries()
-        self.storeExpectedResults()
+        log.executeModule(self.logger, self._run)

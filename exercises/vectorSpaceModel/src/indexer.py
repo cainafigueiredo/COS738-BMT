@@ -1,6 +1,5 @@
 import os
 import ast
-import numpy as np
 import pandas as pd
 import pickle
 
@@ -10,11 +9,12 @@ PROJECT_DIR = f"{SCRIPT_DIR}/.."
 import sys
 sys.path.append(PROJECT_DIR)
 
-from typing import Any, Text, List, Dict
+from typing import Text, List
 from xml.dom import minidom
-from utils.textProcessing import textPreprocessingFunc
-from nltk.tokenize import word_tokenize
-from abc import ABC, abstractmethod
+from utils.textProcessing import vectorizeText
+from utils import log
+from src.model import TermDocumentMatrix
+from utils.weight import StandardTFIDF
 
 class InvertedListGenerator:
     def __init__(
@@ -25,6 +25,7 @@ class InvertedListGenerator:
         self.documentFilePathList = documentFilePathList
         self.invertedListFilePath = invertedListFilePath
         self.documentsData = []
+        self.logger = log.initLogger("INVERTED_LIST_GENERATOR")
 
     def parseDocument(self, documentFilePath):
         dataDOM = minidom.parse(documentFilePath)
@@ -55,12 +56,11 @@ class InvertedListGenerator:
 
     def preprocessDocuments(self):
         self.documentsData = self.documentsData.dropna()
-        self.documentsData["abstract"] = self.documentsData["abstract"].apply(textPreprocessingFunc)
+        self.documentsData["abstract"] = self.documentsData["abstract"].apply(
+            lambda text: vectorizeText(text)
+        )
 
     def generateInvertedList(self):
-        self.documentsData["abstract"] = self.documentsData["abstract"].apply(
-            lambda text: word_tokenize(text, language = "english", preserve_line = False)
-        )
         self.documentsData = self.documentsData.explode("abstract")
         self.documentsData = self.documentsData.groupby("abstract").agg(lambda group: list(group)).reset_index()
         self.documentsData.columns = ["term", "documentIDList"]
@@ -70,99 +70,43 @@ class InvertedListGenerator:
     def storeInvertedList(self):
         self.documentsData.to_csv(self.invertedListFilePath, index = False, sep = ";")
 
+    def _run(self):
+        log.executeFunction(
+            logger = self.logger, 
+            onStartMessage = "Loading documents",
+            onFinishMessage = "Documents were loaded with success",
+            onErrorMessage = "Error while loading documents",
+            func = self.parseCorpus
+        )
+        self.logger.info(f"Total Documents: {self.documentsData.shape[0]}")
+
+        log.executeFunction(
+            logger = self.logger, 
+            onStartMessage = "Preprocessing documents",
+            onFinishMessage = "Documents were preprocessed with success",
+            onErrorMessage = "Error while preprocessing documents",
+            func = self.preprocessDocuments
+        )
+
+        log.executeFunction(
+            logger = self.logger, 
+            onStartMessage = "Generating inverted list",
+            onFinishMessage = "Inverted list was generated with success",
+            onErrorMessage = "Error while generating inverted list",
+            func = self.generateInvertedList
+        )
+        self.logger.info(f"Total Terms: {self.documentsData.shape[0]}")
+
+        log.executeFunction(
+            logger = self.logger, 
+            onStartMessage = "Storing inverted list",
+            onFinishMessage = "Inverted list was stored with success",
+            onErrorMessage = "Error while storing inverted list",
+            func = self.storeInvertedList
+        )
+
     def run(self):
-        self.parseCorpus()
-        self.storeInvertedList()
-        self.preprocessDocuments()
-        self.generateInvertedList()
-        self.storeInvertedList()
-
-class WeightCalculator(ABC):
-    def __init__(self, invertedList):
-        self.invertedList = invertedList
-        self.documentIDs = self.getDocumentIDs()
-
-    def getDocumentIDs(self):
-        documentIDs = self.invertedList.documentIDList.apply(
-            lambda document: list(document.index)
-        ).explode().unique()
-        return set(documentIDs)
-
-    def getTermCountInDocument(self, documentID, term):
-        termCount = self.invertedList.loc[term].documentIDList.loc[documentID].termCount
-        return termCount
-
-    def getDocumentCountForTerm(self, term):
-        documentCount = self.invertedList.loc[term].documentCount
-        return documentCount
-
-    def calculateDocumentWeightLengths(self):
-        documentWeights = {}
-        for term in self.invertedList.index:
-            documents = self.invertedList.loc[term].documentIDList
-            for documentID in documents.index:
-                weight = self.getWeight(documentID, term, normalized = False)
-                if documentID in documentWeights.keys():
-                    documentWeights[documentID] += weight**2
-                else:
-                    documentWeights[documentID] = weight**2
-        documentWeights = {documentID: np.sqrt(sumSquaredWeights) for documentID, sumSquaredWeights in documentWeights.items()}
-        return documentWeights
-
-    @abstractmethod
-    def weightFunction(self, documentID, term):
-        pass
-
-    def getWeight(self, documentID, term, normalized = False):
-        if term not in self.invertedList.index:
-            raise Exception(f"Invalid term: the term {term} does not exist.")
-        if documentID not in self.documentIDs:
-            raise Exception(f"Invalid document ID: the document {documentID} does not exist.")
-        try:
-            weight = self.weightFunction(documentID, term)
-            if normalized:
-                weight = weight/self.documentWeightLengths[documentID]
-            return weight
-        except:
-            return 0
-
-class StandardTFIDF(WeightCalculator):
-    def __init__(self, invertedList):
-        super(StandardTFIDF, self).__init__(invertedList)
-        self.totalDocuments = self.calculateNumberOfDocuments()
-        self.maxTermCount = self.calculateMaxTermCount()
-        self.documentWeightLengths = self.calculateDocumentWeightLengths()
-
-    def weightFunction(self, documentID, term):
-        termCount = self.getTermCountInDocument(documentID, term)
-        documentCount = self.getDocumentCountForTerm(term)
-        maxTermCount = self.maxTermCount
-        totalDocuments = self.totalDocuments
-
-        tf = termCount/maxTermCount
-        idf = np.log(totalDocuments/documentCount)
-
-        weight = tf*idf
-
-        return weight
-
-    def calculateNumberOfDocuments(self):
-        documentsIDs = self.invertedList.documentIDList.apply(lambda document: document.index).explode().unique()
-        totalDocuments = len(documentsIDs)
-        return totalDocuments
-    
-    def calculateMaxTermCount(self):
-        maxTermCount = self.invertedList.documentIDList.apply(lambda document: list(document.termCount)).explode().max()
-        return maxTermCount
-
-class TermDocumentMatrix:
-    def __init__(self, invertedList: List[Dict], weightCalculator: WeightCalculator = StandardTFIDF):
-        self.invertedList = invertedList
-        self.weightCalculator = weightCalculator(invertedList)
-
-    def getWeight(self, documentID, term, normalized = False):
-        weight = self.weightCalculator.getWeight(documentID, term, normalized)
-        return weight
+        log.executeModule(self.logger, self._run)
 
 class Indexer:
     def __init__(
@@ -172,6 +116,7 @@ class Indexer:
     ):
         self.invertedListFilePath = invertedListFilePath
         self.indexesFilePath = indexesFilePath
+        self.logger = log.initLogger("INDEXER")
 
     def processInvertedList(self) -> pd.DataFrame:
         # Generating Statistics
@@ -200,9 +145,27 @@ class Indexer:
         return invertedList
     
     def createTermDocumentMatrix(self, invertedList):
-        termDocumentMatrix = TermDocumentMatrix(invertedList = invertedList)
+        termDocumentMatrix = TermDocumentMatrix(invertedList = invertedList, weightCalculator = StandardTFIDF)
         pickle.dump(termDocumentMatrix, open(self.indexesFilePath, "wb"))
 
+    def _run(self):
+        processedInvertedList = log.executeFunction(
+            logger = self.logger, 
+            onStartMessage = "Loading and processing inverted list",
+            onFinishMessage = "Inverted list was loaded and processed with success",
+            onErrorMessage = "Error while loading and processing inverted list",
+            func = self.processInvertedList
+        )
+        self.logger.info(f"Total Terms: {processedInvertedList.shape[0]}")
+
+        log.executeFunction(
+            logger = self.logger, 
+            onStartMessage = "Generating and storing model",
+            onFinishMessage = "Model was generated and stored with success",
+            onErrorMessage = "Error while generating and storing model",
+            func = self.createTermDocumentMatrix,
+            invertedList = processedInvertedList
+        )
+        
     def run(self):
-        processedInvertedList = self.processInvertedList()
-        self.createTermDocumentMatrix(processedInvertedList)
+        log.executeModule(self.logger, self._run)

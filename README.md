@@ -7,7 +7,7 @@ As soluções para os exercícios podem ser encontradas no diretório "[*exercis
 - [x] **[Exercício 1](exercises/xmlParsing/):** Aprendendo a processar um documento XML.
     - Neste exercício, o objetivo é extrair os nomes de todos os autores (tag AUTHOR) e de todos os títulos (tag TITLE) a partir do arquivo XML "*cf79.xml*", disponibilizado juntamente com o conjunto de dados "*CysticFibrosis2*" (ver Seção "[Conjuntos de Dados](#conjuntos-de-dados))". Para isso, é solicitada a utilização de dois *parsers* XML distintos. A solução implementada utilizou o *parser* SAX e o *parser* DOM da biblioteca XML, disponível para Python. Os resultados da
     
-- [ ] **[Exercício 2 (em desenvolvimento)](exercises/vectorSpaceModel/):** Implementação de um sistema de recuperação em memória segundo o modelo vetorial.
+- [x] **[Exercício 2 (em desenvolvimento)](exercises/vectorSpaceModel/):** Implementação de um sistema de recuperação em memória segundo o modelo vetorial.
     - Neste exercício, utilizamos a base "*CysticFibrosis2*" (ver Seção "[Conjuntos de Dados](#conjuntos-de-dados))". 
 
 ## Conjuntos de Dados

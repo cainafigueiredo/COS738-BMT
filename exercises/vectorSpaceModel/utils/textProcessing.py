@@ -1,6 +1,8 @@
 import re
 import string
 from unidecode import unidecode
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
 
 def textPreprocessingFunc(text):
     # Removing accents
@@ -20,3 +22,13 @@ def textPreprocessingFunc(text):
     text = text.upper()
 
     return text
+
+def vectorizeText(text):
+    text = textPreprocessingFunc(text)
+    tokens = word_tokenize(text, language = "english", preserve_line = False)
+    
+    # Removin Stopwords
+    stopWords = set(stopwords.words('english'))
+    tokens = [token for token in tokens if not token.lower in stopWords]
+
+    return tokens
