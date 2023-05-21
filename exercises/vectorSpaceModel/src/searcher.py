@@ -18,11 +18,13 @@ class Searcher:
         self,
         modelFilePath: Text, 
         queriesFilePath: Text,
-        resultsFilePath: Text
+        resultsFilePath: Text,
+        useStemmer: bool = False
     ) -> None:
         self.modelFilePath = modelFilePath
         self.queriesFilePath = queriesFilePath
         self.resultsFilePath = resultsFilePath
+        self.useStemmer = useStemmer
         self.model = None
         self.queries = None
         self.logger = log.initLogger("SEARCHER")
@@ -35,31 +37,35 @@ class Searcher:
         queries = pd.read_csv(self.queriesFilePath, sep = ";")
         return queries  
     
-    def searchFromQuery(self, query: Text, limit = -1):
-        queryTerms = vectorizeText(query)
-        queryTerms = list(pd.Series(queryTerms).unique())
+    def searchFromQuery(self, query: Text, limit = None, simThreshold = None):
+        if (limit is not None) and simThreshold is not None:
+            raise ValueError("limit and simThreshold can not be set at the same time.")
+        queryTerms = vectorizeText(query, self.useStemmer)
+        queryTerms = pd.Series(queryTerms).apply(str.upper).unique()
         queryTerms = self.model.filterQueryTerms(queryTerms)
         similarities = []
         for queryTerm in queryTerms:
             documentIDs = self.model.filterDocumentsByQueryTerms(queryTerms)
             for documentID in documentIDs:
                 weightQueryTermInDocumentID = self.model.getWeight(documentID, queryTerm, normalized = True)
-                similarities.append([documentID, weightQueryTermInDocumentID**2])
+                similarities.append([documentID, weightQueryTermInDocumentID])
         similarities = pd.DataFrame(data = similarities, columns = ["documentID", "similarity"])
-        similarities.similarity = similarities.similarity.apply(np.sqrt)
+        similarities = similarities.groupby("documentID").sum().reset_index()
         similarities = similarities.sort_values("similarity", ascending = False).reset_index(drop = True)
         similarities["rank"] = similarities.index + 1
-        if limit > 0:
+        if limit:
             similarities = similarities.iloc[:limit]
+        if simThreshold:
+            similarities = similarities[similarities.similarity >= simThreshold]
         return similarities
 
-    def runQueries(self, limit = -1):
+    def runQueries(self, limit = None, simThreshold = None):
         results = []
         for i in tqdm(self.queries.index, desc = "Running queries..."):
             row = self.queries.loc[i]
             query = row.queryText
             number = row.queryNumber
-            queryResults = self.searchFromQuery(query, limit = limit)
+            queryResults = self.searchFromQuery(query, limit = limit, simThreshold = simThreshold)
             queryResults["queryNumber"] = number
             queryResults = queryResults[["queryNumber", "rank", "documentID", "similarity"]]
             results.append(queryResults)

@@ -20,10 +20,12 @@ class InvertedListGenerator:
     def __init__(
             self, 
             documentFilePathList: List[Text],
-            invertedListFilePath: Text
+            invertedListFilePath: Text,
+            useStemmer: bool = False
         ):
         self.documentFilePathList = documentFilePathList
         self.invertedListFilePath = invertedListFilePath
+        self.useStemmer = useStemmer
         self.documentsData = []
         self.logger = log.initLogger("INVERTED_LIST_GENERATOR")
 
@@ -57,7 +59,7 @@ class InvertedListGenerator:
     def preprocessDocuments(self):
         self.documentsData = self.documentsData.dropna()
         self.documentsData["abstract"] = self.documentsData["abstract"].apply(
-            lambda text: vectorizeText(text)
+            lambda text: vectorizeText(text, self.useStemmer)
         )
 
     def generateInvertedList(self):

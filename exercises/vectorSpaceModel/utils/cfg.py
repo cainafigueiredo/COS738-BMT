@@ -44,7 +44,7 @@ class QueryProcessorConfig(ConfigBase):
 class InvertedListGeneratorConfig(ConfigBase):
     def __init__(self, configPath: Text):
         super().__init__(configPath)
-        self.requiredInstructions = ["LEIA", "ESCREVA"]
+        self.requiredInstructions = ["STEMMER", "LEIA", "ESCREVA"]
 
     def checkRequiredInstructions(self) -> bool:
         if self.cfg is not None:
@@ -56,11 +56,13 @@ class InvertedListGeneratorConfig(ConfigBase):
 
     def loadConfig(self) -> None:
         try:
-            cfg = re.findall(r"(.*)=(.*)", open(self.configPath).read())
+            cfgLines = open(self.configPath).read().split("\n")
+            stemmerOrNotStemmer = cfgLines[0].strip()
+            remainingConfigs = "\n".join(cfgLines[1:])
+            cfg = re.findall(r"(.*)=(.*)", remainingConfigs)
             cfg = pd.DataFrame(data = cfg, columns = ["instruction", "value"])
             cfg = cfg.groupby("instruction").agg(lambda group: list(group))
-            self.cfg = dict([*cfg.itertuples()])
-
+            self.cfg = dict([*cfg.itertuples(), ("STEMMER", stemmerOrNotStemmer == "STEMMER")])
 
             hasAllRequiredInstructions = self.checkRequiredInstructions()
 

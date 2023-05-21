@@ -69,12 +69,14 @@ def main():
     # Inverted List   
     documentFilePathList = [os.path.abspath(path) for path in invertedListCFG["LEIA"]]
     invertedListFilePath = os.path.abspath(invertedListCFG["ESCREVA"])
+    useStemmer = invertedListCFG["STEMMER"]
 
     os.makedirs(os.path.dirname(invertedListFilePath), exist_ok = True)
 
     invertedListGenerator = InvertedListGenerator(
         documentFilePathList = documentFilePathList,
-        invertedListFilePath = invertedListFilePath
+        invertedListFilePath = invertedListFilePath,
+        useStemmer = useStemmer
     )
 
     ## Indexer  
@@ -91,14 +93,18 @@ def main():
     ## Searcher   
     modelFilePath = os.path.abspath(searcherCFG["MODELO"])
     queriesFilePath = os.path.abspath(searcherCFG["CONSULTAS"])
-    resultsFilePath = os.path.abspath(searcherCFG["RESULTADOS"])
+    resultsFileDir, resultsFile = os.path.split(os.path.abspath(searcherCFG["RESULTADOS"]))
+    resultsFileName, resultsFileExt = os.path.splitext(resultsFile)
+    resultsFileName += f"-{'STEMMER' if useStemmer else 'NOSTEMMER'}"
+    resultsFilePath = f"{resultsFileDir}/{resultsFileName}{resultsFileExt}"
 
     os.makedirs(os.path.dirname(resultsFilePath), exist_ok = True)
 
     searcher = Searcher(
         modelFilePath = modelFilePath, 
         queriesFilePath = queriesFilePath,
-        resultsFilePath = resultsFilePath
+        resultsFilePath = resultsFilePath,
+        useStemmer = useStemmer
     )
 
     # Putting all together
