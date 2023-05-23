@@ -12,6 +12,7 @@ def initLogger(name: Text):
     return logger
 
 def executeFunction(
+    
         logger: logging.Logger, 
         onStartMessage: Text = "Starting execution...", 
         onFinishMessage: Text = "Execution has finished with success...", 

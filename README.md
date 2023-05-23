@@ -10,7 +10,7 @@ As soluções para os exercícios podem ser encontradas no diretório "[*exercis
 - [x] **[Exercício 2](exercises/vectorSpaceModel/):** Implementação de um sistema de recuperação de informação em memória segundo o modelo vetorial.
     - Neste exercício, utilizamos a base "*CysticFibrosis2*" (ver Seção "[Conjuntos de Dados](#conjuntos-de-dados))". 
 
-- [ ] **[Exercício 3 (em desenvolvimento)](exercises/vectorSpaceModel/):** Avaliação do sistema de recuperação de informação implementado no Exercício 2.
+- [x] **[Exercício 3](exercises/vectorSpaceModel/):** Avaliação do sistema de recuperação de informação implementado no Exercício 2.
 
 ## Conjuntos de Dados
 Esta seção apresenta os conjuntos de dados utilizados nas tarefas e projetos da disciplina. Disponibilizamos também os links para download dos dados.

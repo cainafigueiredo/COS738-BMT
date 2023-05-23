@@ -67,10 +67,31 @@ Há quatro arquivos de configurações que se encontram neste diretório. O prim
         RESULTADOS=/home/data/results.csv
         ```
 
+- **AVALIA.CFG**: arquivo de configuração do módulo *Evaluator*. Esse arquivo deve conter as seguintes instruções:
+    - **RESULTADOS**: especifica os arquivos de resultados que devem ser utilizados para gerar as medidas de avaliação e diagramas. Se múltiplos arquivos de resultados serão utilizados, então inclua uma linha desta instrução para cada arquivo de resultados.
+    - **NOME**: atribui nomes para os arquivos de resultados. Estes nomes serão utilizados para identificar os conjuntos de resultados dentro do módulo *Evaluator*. Deve haver uma instrução *NOME* para cada arquivo de resultados.
+    - **ESPERADOS**: caminho para o arquivo com os resultados esperados para as *queries*. 
+    - **ESCREVA_DIRETORIO**: diretório onde as medidas de avaliação e os diagramas serão armazenados
+    - Exemplo: 
+        ```bash
+        RESULTADOS=/home/data/resultados1.csv
+        NOME=resultadosComStemmer
+        RESULTADOS=resultados2.csv
+        NOME=resultadosSemStemmer
+        ESPERADOS=/home/data/esperados.csv
+        ESCREVA_DIRETORIO=/home/data/avaliacao
+        ```
+
 ## **Executando o Sistema**
 
-O próximo passo é executar o *script* ```main.py```. Esse *script* irá chamar todos os módulos que compõem o sistema de recuperação de informação.
+O próximo passo é executar o *script* ```main.py```. Você pode executá-lo no modo de consulta ou no modo de avaliação. Para executar o sistema no modo de consulta, rode o comando abaixo:
 
 ```bash
-$ python3 main.py
+$ python3 main.py -m search
+```
+
+Para executá-lo no modo de avaliação, rode o seguinte comando:
+
+```bash
+$ python3 main.py -m eval
 ```
